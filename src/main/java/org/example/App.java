@@ -1,5 +1,6 @@
 package org.example;
 
+import java.lang.reflect.Array;
 import java.security.Security;
 import java.util.*;
 
@@ -8,9 +9,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.util.ArrayList;
 
 public class App  {
-
-    public static ArrayList<Block> blockchain = new ArrayList<Block>();
     public static HashMap<String, TransactionOutput> UTXOs = new HashMap<>();
+    public static ArrayList<Transaction> mempool = new ArrayList<>();
     public static int difficulty = 2;
     public static float minimumTransaction = 0.1f;
 
@@ -20,10 +20,12 @@ public class App  {
         // 암호화 제공자로 BouncyCastle를 지정
         Security.addProvider(new BouncyCastleProvider());
 
-        chainTest();
-    }
 
-    public static void chainTest() {
+        // 새로운 트랜잭션을 입력받는 스레드
+        // 블록 생성하는 스레드
+        // 네트워크로부터 블록, 트랜잭션 정보 수신받는 스레드
+        BlockChain blockChain = new BlockChain();
+
         Wallet walletA = new Wallet();
         Wallet walletB = new Wallet();
         Wallet coinbase = new Wallet();
@@ -35,61 +37,58 @@ public class App  {
         genesisTransaction.transactionId = "0"; // 수동으로 지정
         genesisTransaction.outputs.add(new TransactionOutput(genesisTransaction.recipient, genesisTransaction.value, genesisTransaction.transactionId));
         UTXOs.put(genesisTransaction.outputs.get(0).id, genesisTransaction.outputs.get(0));
+        mempool.add(genesisTransaction);
 
         System.out.println("Creating and Mining Genesis block... ");
         Block genesis = new Block("0");
-        genesis.addTransactioninBlock(genesisTransaction);
-        addBlock(genesis);
+        genesis.transactions.addAll(mempool);
+        blockChain.addBlock(genesis);
 
-        // Block 1
         System.out.println("\nBlock 1");
         System.out.println("A->B 40, A->B 20");
 
+        // 트랜잭션 생성
+        walletA.createTransaction(walletB.publicKey, 40f);
+        walletA.createTransaction(walletB.publicKey, 20f);
+
+        // 현재 생성된 트랜잭션 가지고 블록 생성
         Block block1 = new Block(genesis.hash);
-        block1.addTransactioninBlock(walletA.createTransaction(walletB.publicKey, 40f));
-        block1.addTransactioninBlock(walletA.createTransaction(walletB.publicKey, 20f));
-        addBlock(block1);
-
-        System.out.println("WalletA's balance is: " + walletA.getBalance());
-        System.out.println("WalletB's balance is: " + walletB.getBalance());
-
-        isChainValid();
+        block1.transactions.addAll(mempool);
+        block1.mineBlock(2);
+        blockChain.addBlock(block1);
 
         // Block 2
         System.out.println("\nBlock 2");
-        System.out.println("A->B 10, B->A 5, B->A 5");
+        System.out.println("A->B 10, B->A 5");
 
+        walletA.createTransaction(walletB.publicKey, 10f);
+        walletB.createTransaction(walletA.publicKey, 5f);
         Block block2 = new Block(block1.hash);
-        block2.addTransactioninBlock(walletA.createTransaction(walletB.publicKey, 10f));
-        block2.addTransactioninBlock(walletB.createTransaction(walletA.publicKey, 5f));
-        block2.addTransactioninBlock(walletB.createTransaction(walletA.publicKey, 5f));
-        addBlock(block2);
+        block2.transactions.addAll(mempool);
+        block2.mineBlock(2);
+        blockChain.addBlock(block2);
 
         System.out.println("WalletA's balance is: " + walletA.getBalance());
         System.out.println("WalletB's balance is: " + walletB.getBalance());
 
-        isChainValid();
+
+        isChainValid(blockChain);
     }
 
-    public static void addBlock(Block newBlock) {
-        // TODO: 블록 추가를 하지 말아야 하는 경우 ex: 포함된 트랜잭션이 없는 경우
 
-        newBlock.mineBlock(difficulty);
-        blockchain.add(newBlock);
-    }
-
-    public static Boolean isChainValid() {
+    public static Boolean isChainValid(BlockChain blockChain) {
         Block currentBlock;
         Block previousBlock;
+        ArrayList<Block> chain = blockChain.chain;
         String hashTarget = new String(new char[difficulty]).replace('\0', '0');
         HashMap<String,TransactionOutput> tempUTXOs = new HashMap<String,TransactionOutput>(); //a temporary working list of unspent transactions at a given block state.
         tempUTXOs.put(genesisTransaction.outputs.get(0).id, genesisTransaction.outputs.get(0));
 
-        //loop through blockchain to check hashes:
-        for(int i=1; i < blockchain.size(); i++) {
+        //loop through chain to check hashes:
+        for(int i=1; i < chain.size(); i++) {
 
-            currentBlock = blockchain.get(i);
-            previousBlock = blockchain.get(i-1);
+            currentBlock = chain.get(i);
+            previousBlock = chain.get(i-1);
             //compare registered hash and calculated hash:
             if(!currentBlock.hash.equals(currentBlock.calculateHash()) ){
                 System.out.println("#Current Hashes not equal");
@@ -106,7 +105,7 @@ public class App  {
                 return false;
             }
 
-            //loop thru blockchains transactions:
+            //loop thru chains transactions:
             TransactionOutput tempOutput;
             for(int t=0; t <currentBlock.transactions.size(); t++) {
                 Transaction currentTransaction = currentBlock.transactions.get(t);

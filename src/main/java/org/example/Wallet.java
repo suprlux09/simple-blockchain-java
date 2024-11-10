@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.example.App.mempool;
+
 public class Wallet {
     public PrivateKey privateKey;
     public PublicKey publicKey;
@@ -55,7 +57,13 @@ public class Wallet {
     }
 
 
-    // 트랜잭션 객체 생성
+    /**
+     * 트랜잭션 추가
+     *
+     * @param recipient 수신자
+     * @param value 송신할 값
+     * @return 생성된 트랜잭션 객체
+     */
     public Transaction createTransaction(PublicKey recipient, float value) {
         if (getBalance() < value) {
             System.out.println("#Not Enough funds to send transaction. Transaction Discarded.");
@@ -77,8 +85,13 @@ public class Wallet {
         Transaction transaction = new Transaction(publicKey, recipient, value, inputs);
         transaction.generateSignature(privateKey);
 
-        // TODO: 트랜잭션 내역을 기록하는 등의 추가 기능
-
-        return transaction;
+        // TODO: 트랜잭션 브로드캐스트
+        if (transaction.validateTransaction()) {
+            mempool.add(transaction);
+            return transaction;
+        }
+        else {
+            return null;
+        }
     }
 }
