@@ -35,27 +35,6 @@ public class Block {
         }
         System.out.println("Nonce: " + Integer.toString(nonce));
         System.out.println("Hash " + hash);
-
-        // TODO: 블록체인에 추가 시도, 추가 성공 시 브로드캐스트
-
-
-    }
-
-    // 블록에 트랜잭션 추가 (사용하지 않을 예정: 블록이 생성될 때 mempool에 포함된 트랜잭션을 포함하게 됨)
-    public boolean addTransactioninBlock(Transaction transaction) {
-        if (transaction == null) return false;
-
-        // 제네시스 블록(블록체인의 첫번째 블록)이 아닌 경우
-        // 트랜잭션 처리 및 유효성 검사
-        if (previousHash != "0") {
-            if (!transaction.validateTransaction()) {
-                System.out.println("Transaction failed to process. Discarded.");
-                return false;
-            }
-        }
-        transactions.add(transaction);
-        System.out.println("Transaction Successfully added to Block");
-        return true;
     }
 
     /**
@@ -82,11 +61,6 @@ public class Block {
         for (Transaction transaction : this.transactions) {
             if(!mempool.contains(transaction))
                 return false;
-        }
-
-        // mempool에서 트랜잭션 삭제
-        for (Transaction transaction : this.transactions) {
-            mempool.remove(transaction);
         }
 
         return true;

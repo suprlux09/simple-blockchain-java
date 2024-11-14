@@ -91,20 +91,6 @@ public class Transaction {
             return false;
         }
 
-        // 새로운 UTXO 생성(Output)
-        outputs.add(new TransactionOutput(this.recipient, value, transactionId));
-        outputs.add(new TransactionOutput(this.sender, getInputsValue() - value, transactionId));
-
-        // 사용된 Input을 UTXO로부터 제거
-        for (TransactionInput input : inputs) {
-            App.UTXOs.remove(input.UTXO.id);
-        }
-
-        // 생성된 Output을 UTXO에 추가
-        for (TransactionOutput output : outputs) {
-            App.UTXOs.put(output.id, output);
-        }
-
         return true;
     }
 

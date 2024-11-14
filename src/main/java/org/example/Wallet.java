@@ -85,13 +85,6 @@ public class Wallet {
         Transaction transaction = new Transaction(publicKey, recipient, value, inputs);
         transaction.generateSignature(privateKey);
 
-        // TODO: 트랜잭션 브로드캐스트
-        if (transaction.validateTransaction()) {
-            mempool.add(transaction);
-            return transaction;
-        }
-        else {
-            return null;
-        }
+        return transaction;
     }
 }

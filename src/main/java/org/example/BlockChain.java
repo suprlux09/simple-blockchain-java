@@ -3,6 +3,7 @@ package org.example;
 import java.util.ArrayList;
 
 import static org.example.App.mempool;
+import static org.example.App.purgeMempool;
 
 public class BlockChain {
     ArrayList<Block> chain = new ArrayList<>();
@@ -25,9 +26,7 @@ public class BlockChain {
         // genesis 블록 추가
         if (block.previousHash.equals("0")) {
             chain.add(block);
-            for (Transaction t : block.transactions) {
-                mempool.remove(t);
-            }
+            purgeMempool(block);
             return true;
         }
 
@@ -38,20 +37,16 @@ public class BlockChain {
         // 블록체인 분기 발생
         if (chain.size() > 2 && chain.get(chain.size()-2).hash.equals(block.previousHash)) {
             branchCandidates.add(block);
-            for (Transaction t : block.transactions) {
-                mempool.remove(t);
-            }
+            purgeMempool(block);
             return true;
         }
 
+        Block previousBlock = chain.get(chain.size()-1);
         if (branchCandidates.isEmpty()) {
-            Block previousBlock = chain.get(chain.size()-1);
             if (!previousBlock.hash.equals(block.previousHash))
                 return false;
-            chain.add(block);
         }
         else {
-            Block previousBlock = chain.get(chain.size()-1);
             if (!previousBlock.hash.equals(block.hash)) {
                 for (Block b : branchCandidates) {
                    previousBlock = b;
@@ -69,13 +64,9 @@ public class BlockChain {
                 mempool.addAll(b.transactions);
             }
             branchCandidates = new ArrayList<>();
-
-            chain.add(block);
         }
-
-        for (Transaction t : block.transactions) {
-            mempool.remove(t);
-        }
+        chain.add(block);
+        purgeMempool(block);
         return true;
     }
 }
