@@ -1,16 +1,17 @@
-package org.example;
+package org.example.entities;
+
 import java.security.*;
 import java.security.spec.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.example.App.mempool;
+import static org.example.entities.UTXOs.*;
 
 public class Wallet {
     public PrivateKey privateKey;
     public PublicKey publicKey;
-    public HashMap<String,TransactionOutput> UTXOs = new HashMap<>();
+    public HashMap<String,TransactionOutput> UTXOsInThisWallet = new HashMap<>();
 
     public Wallet() {
         generateKeyPair();
@@ -43,13 +44,13 @@ public class Wallet {
 
     // 잔액 확인, UTXO 업데이트
     public float getBalance() {
-        this.UTXOs = new HashMap<>();
+        this.UTXOsInThisWallet = new HashMap<>();
 
         float total = 0;
-        for (Map.Entry<String, TransactionOutput> entry : App.UTXOs.entrySet()) {
+        for (Map.Entry<String, TransactionOutput> entry : UTXOs.entrySet()) {
             TransactionOutput UTXO = entry.getValue();
             if (UTXO.isMine(publicKey)) {
-                this.UTXOs.put(UTXO.id, UTXO);
+                this.UTXOsInThisWallet.put(UTXO.id, UTXO);
                 total += UTXO.value;
             }
         }
@@ -74,7 +75,7 @@ public class Wallet {
         ArrayList<TransactionInput> inputs = new ArrayList<>();
 
         float total = 0;
-        for (Map.Entry<String, TransactionOutput> entry : UTXOs.entrySet()) {
+        for (Map.Entry<String, TransactionOutput> entry : UTXOsInThisWallet.entrySet()) {
             TransactionOutput UTXO = entry.getValue();
             total += UTXO.value;
             inputs.add(new TransactionInput(UTXO.id));

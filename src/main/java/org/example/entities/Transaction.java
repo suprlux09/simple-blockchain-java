@@ -1,9 +1,12 @@
-package org.example;
+package org.example.entities;
 
 import java.security.*;
 import java.util.ArrayList;
 
 import static org.example.App.minimumTransaction;
+import static org.example.entities.UTXOs.*;
+import static org.example.utilities.Hash.*;
+import static org.example.utilities.DigitalSignature.*;
 
 public class Transaction {
 
@@ -23,7 +26,7 @@ public class Transaction {
         this.recipient = to;
         this.value = value;
         this.inputs = inputs;
-        this.transactionId = calulateHash();
+        this.transactionId = calculateHash();
     }
 
     @Override
@@ -44,25 +47,25 @@ public class Transaction {
     }
 
     // 트랜잭션의 해시값, transactionId로도 사용됨
-    private String calulateHash() {
+    private String calculateHash() {
         sequence++; //increase the sequence to avoid 2 identical transactions having the same hash
-        return Utility.applySHA256(
-                Utility.getStringFromKey(sender) +
-                    Utility.getStringFromKey(recipient) +
+        return applySHA256(
+                getStringFromKey(sender) +
+                    getStringFromKey(recipient) +
                     Float.toString(value) + sequence
         );
     }
 
     // 디지털 서명 생성
     public void generateSignature(PrivateKey privateKey) {
-        String data = Utility.getStringFromKey(sender) + Utility.getStringFromKey(recipient)  + Float.toString(value);
-        signature = Utility.applyECDSASig(privateKey, data);
+        String data = getStringFromKey(sender) + getStringFromKey(recipient)  + Float.toString(value);
+        signature = applyECDSASig(privateKey, data);
     }
 
     // 디지털 서명 검증 (송신자의 publicKey)
     public boolean verifySignature() {
-        String data = Utility.getStringFromKey(sender) + Utility.getStringFromKey(recipient)  + Float.toString(value);
-        return Utility.verifyECDSASig(sender, data, signature);
+        String data = getStringFromKey(sender) + getStringFromKey(recipient)  + Float.toString(value);
+        return verifyECDSASig(sender, data, signature);
     }
 
     /**
@@ -81,7 +84,7 @@ public class Transaction {
 
         // Input에 저장된 id로부터 객체 참조하도록 하기
         for (TransactionInput input : inputs) {
-            input.UTXO = App.UTXOs.get(input.transactionOutputId);
+            input.UTXO = UTXOs.get(input.transactionOutputId);
             if (input.UTXO == null)
                 return false;
         }

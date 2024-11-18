@@ -1,13 +1,13 @@
-package org.example;
+package org.example.entities;
 
 import java.util.ArrayList;
 
-import static org.example.App.mempool;
-import static org.example.App.purgeMempool;
+import static org.example.entities.Mempool.*;
 
 public class BlockChain {
-    ArrayList<Block> chain = new ArrayList<>();
-    ArrayList<Block> branchCandidates = new ArrayList<>();
+    public static ArrayList<Block> chain = new ArrayList<>();
+    public static ArrayList<Block> branchCandidates = new ArrayList<>();
+    public static Object lockBlockChain = new Object();
 
     /**
      * 블록체인에 새로운 블록을 추가
@@ -22,7 +22,7 @@ public class BlockChain {
      * @param block 추가할 블록
      * @return 블록이 성공적으로 추가되면 true, 그렇지 않으면 false
      */
-    public boolean addBlock(Block block) {
+    public static boolean addBlock(Block block) {
         // genesis 블록 추가
         if (block.previousHash.equals("0")) {
             chain.add(block);
@@ -61,7 +61,7 @@ public class BlockChain {
                 chain.add(previousBlock);
             }
             for (Block b : branchCandidates) {
-                mempool.addAll(b.transactions);
+                pool.addAll(b.transactions);
             }
             branchCandidates = new ArrayList<>();
         }

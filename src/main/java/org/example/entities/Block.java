@@ -1,11 +1,11 @@
-package org.example;
+package org.example.entities;
 
 import java.util.ArrayList;
 import java.util.Date;
 
 import static org.example.App.difficulty;
-import static org.example.App.mempool;
-import static org.example.Utility.applySHA256;
+import static org.example.entities.Mempool.pool;
+import static org.example.utilities.Hash.*;
 
 public class Block {
 
@@ -27,7 +27,7 @@ public class Block {
     }
 
     public void mineBlock(int difficulty) {
-        this.merkleRoot = Utility.getMerkleRoot(transactions);
+        this.merkleRoot = getMerkleRoot(transactions);
         String target = "0".repeat(difficulty);
         while(!hash.substring(0, difficulty).equals(target)) {
             nonce += 1;
@@ -59,7 +59,7 @@ public class Block {
         }
 
         for (Transaction transaction : this.transactions) {
-            if(!mempool.contains(transaction))
+            if(!pool.contains(transaction))
                 return false;
         }
 

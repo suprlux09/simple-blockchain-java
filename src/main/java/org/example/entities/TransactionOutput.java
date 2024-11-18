@@ -1,6 +1,9 @@
-package org.example;
+package org.example.entities;
 
 import java.security.PublicKey;
+
+import static org.example.utilities.Hash.applySHA256;
+import static org.example.utilities.DigitalSignature.getStringFromKey;
 
 public class TransactionOutput {
     public String id;
@@ -12,7 +15,7 @@ public class TransactionOutput {
         this.recipient = recipient;
         this.value = value;
         this.parentTransactionId = parentTransactionId;
-        this.id = Utility.applySHA256(Utility.getStringFromKey(recipient)+Float.toString(value)+parentTransactionId);
+        this.id = applySHA256(getStringFromKey(recipient)+Float.toString(value)+parentTransactionId);
     }
 
     public boolean isMine(PublicKey publicKey) {
