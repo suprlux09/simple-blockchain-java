@@ -1,25 +1,38 @@
 package org.example;
 
+import java.io.*;
+import java.net.InetAddress;
+import java.security.PublicKey;
 import java.security.Security;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.example.entities.*;
 import static org.example.entities.Mempool.pool;
 import static org.example.entities.UTXOs.*;
-
-import java.util.ArrayList;
+import static org.example.utilities.WebRequest.*;
 
 public class App  {
-    public static int difficulty = 5;
+    public static int difficulty = 2;
+    public static int minimumTransactionsPerBlock = 5;
     public static float minimumTransaction = 0.1f;
 
     public static Transaction genesisTransaction;
+    public static Wallet wallet;
+    public static HashMap<String, PublicKey> publicKeyList = new HashMap<>();
 
-    public static void main( String[] args ) {
-
+    static {
         // 암호화 제공자로 BouncyCastle를 지정
         Security.addProvider(new BouncyCastleProvider());
+        wallet = new Wallet();
+    }
+
+    public static void main( String[] args ) throws IOException, ExecutionException, InterruptedException {
+        int currentServerPort = 8080;
+        if (args.length == 1) {
+            currentServerPort = Integer.parseInt(args[0]);
+        }
 
         // publickey 리스트 받기
 
@@ -28,8 +41,8 @@ public class App  {
         // genesis 블록 생성, 전송
 
         // 실행
-        example();
 
+        example();
     }
 
     public static void example() {
@@ -43,7 +56,7 @@ public class App  {
         genesisTransaction.generateSignature(coinbase.privateKey);
         genesisTransaction.transactionId = "0"; // 수동으로 지정
         genesisTransaction.outputs.add(new TransactionOutput(genesisTransaction.recipient, genesisTransaction.value, genesisTransaction.transactionId));
-        UTXOs.put(genesisTransaction.outputs.get(0).id, genesisTransaction.outputs.get(0));
+        UTXOsMap.put(genesisTransaction.outputs.get(0).id, genesisTransaction.outputs.get(0));
         pool.add(genesisTransaction);
 
         System.out.println("Creating and Mining Genesis block... ");
@@ -56,40 +69,25 @@ public class App  {
         System.out.println("A->B 40, A->B 20");
 
         Transaction transaction = walletA.createTransaction(walletB.publicKey, 40f);
-        if (transaction.validateTransaction()) {
-            updateUTXOs(transaction);
-            pool.add(transaction);
-        }
+        transaction.process();
+
         transaction = walletA.createTransaction(walletB.publicKey, 20f);
-        if (transaction.validateTransaction()) {
-            updateUTXOs(transaction);
-            pool.add(transaction);
-        }
+        transaction.process();
 
         Block block1 = new Block(genesis.hash);
-        block1.transactions.addAll(pool);
-        block1.mineBlock(2);
-        BlockChain.addBlock(block1);
-
+        block1.process();
 
         System.out.println("\nBlock 2");
         System.out.println("A->B 10, B->A 5");
 
         transaction = walletA.createTransaction(walletB.publicKey, 10f);
-        if (transaction.validateTransaction()) {
-            updateUTXOs(transaction);
-            pool.add(transaction);
-        }
+        transaction.process();
+
         transaction = walletB.createTransaction(walletA.publicKey, 5f);
-        if (transaction.validateTransaction()) {
-            updateUTXOs(transaction);
-            pool.add(transaction);
-        }
+        transaction.process();
 
         Block block2 = new Block(block1.hash);
-        block2.transactions.addAll(pool);
-        block2.mineBlock(2);
-        BlockChain.addBlock(block2);
+        block2.process();
 
         System.out.println("WalletA's balance is: " + walletA.getBalance());
         System.out.println("WalletB's balance is: " + walletB.getBalance());

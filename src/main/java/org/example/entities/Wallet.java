@@ -47,11 +47,13 @@ public class Wallet {
         this.UTXOsInThisWallet = new HashMap<>();
 
         float total = 0;
-        for (Map.Entry<String, TransactionOutput> entry : UTXOs.entrySet()) {
-            TransactionOutput UTXO = entry.getValue();
-            if (UTXO.isMine(publicKey)) {
-                this.UTXOsInThisWallet.put(UTXO.id, UTXO);
-                total += UTXO.value;
+        synchronized (UTXOsMap) {
+            for (Map.Entry<String, TransactionOutput> entry : UTXOsMap.entrySet()) {
+                TransactionOutput UTXO = entry.getValue();
+                if (UTXO.isMine(publicKey)) {
+                    this.UTXOsInThisWallet.put(UTXO.id, UTXO);
+                    total += UTXO.value;
+                }
             }
         }
         return total;

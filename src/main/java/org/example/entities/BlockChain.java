@@ -7,7 +7,7 @@ import static org.example.entities.Mempool.*;
 public class BlockChain {
     public static ArrayList<Block> chain = new ArrayList<>();
     public static ArrayList<Block> branchCandidates = new ArrayList<>();
-    public static Object lockBlockChain = new Object();
+    public static final Object lockBlockChain = new Object();
 
     /**
      * 블록체인에 새로운 블록을 추가
@@ -23,50 +23,52 @@ public class BlockChain {
      * @return 블록이 성공적으로 추가되면 true, 그렇지 않으면 false
      */
     public static boolean addBlock(Block block) {
-        // genesis 블록 추가
-        if (block.previousHash.equals("0")) {
+        synchronized (lockBlockChain) {
+            // genesis 블록 추가
+            if (block.previousHash.equals("0")) {
+                chain.add(block);
+                purgeMempool(block);
+                return true;
+            }
+
+            // 블록 검증
+            if (!block.validateBlock())
+                return false;
+
+            // 블록체인 분기 발생
+            if (chain.size() > 2 && chain.get(chain.size()-2).hash.equals(block.previousHash)) {
+                branchCandidates.add(block);
+                purgeMempool(block);
+                return true;
+            }
+
+            Block previousBlock = chain.get(chain.size()-1);
+            if (branchCandidates.isEmpty()) {
+                if (!previousBlock.hash.equals(block.previousHash))
+                    return false;
+            }
+            else {
+                if (!previousBlock.hash.equals(block.hash)) {
+                    for (Block b : branchCandidates) {
+                        previousBlock = b;
+                        if (previousBlock.hash.equals(block.hash))
+                            break;
+                    }
+                    if (!previousBlock.hash.equals(block.hash))
+                        return false;
+
+                    branchCandidates.add(chain.remove(chain.size()-1));
+                    branchCandidates.remove(previousBlock);
+                    chain.add(previousBlock);
+                }
+                for (Block b : branchCandidates) {
+                    pool.addAll(b.transactions);
+                }
+                branchCandidates = new ArrayList<>();
+            }
             chain.add(block);
             purgeMempool(block);
             return true;
         }
-
-        // 블록 검증
-        if (!block.validateBlock())
-            return false;
-
-        // 블록체인 분기 발생
-        if (chain.size() > 2 && chain.get(chain.size()-2).hash.equals(block.previousHash)) {
-            branchCandidates.add(block);
-            purgeMempool(block);
-            return true;
-        }
-
-        Block previousBlock = chain.get(chain.size()-1);
-        if (branchCandidates.isEmpty()) {
-            if (!previousBlock.hash.equals(block.previousHash))
-                return false;
-        }
-        else {
-            if (!previousBlock.hash.equals(block.hash)) {
-                for (Block b : branchCandidates) {
-                   previousBlock = b;
-                   if (previousBlock.hash.equals(block.hash))
-                       break;
-                }
-                if (!previousBlock.hash.equals(block.hash))
-                    return false;
-
-                branchCandidates.add(chain.remove(chain.size()-1));
-                branchCandidates.remove(previousBlock);
-                chain.add(previousBlock);
-            }
-            for (Block b : branchCandidates) {
-                pool.addAll(b.transactions);
-            }
-            branchCandidates = new ArrayList<>();
-        }
-        chain.add(block);
-        purgeMempool(block);
-        return true;
     }
 }

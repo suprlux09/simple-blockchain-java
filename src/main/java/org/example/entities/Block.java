@@ -1,16 +1,20 @@
 package org.example.entities;
 
+import java.io.Serializable;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Date;
 
-import static org.example.App.difficulty;
+import static org.example.App.*;
+import static org.example.entities.BlockChain.addBlock;
 import static org.example.entities.Mempool.pool;
 import static org.example.utilities.Hash.*;
 
-public class Block {
+public class Block implements Serializable {
 
     public String hash;
     public String previousHash;
+    public PublicKey minor;
     private String merkleRoot;
     public ArrayList<Transaction> transactions = new ArrayList<>();
     private long timeStamp;
@@ -19,11 +23,41 @@ public class Block {
     public Block(String previousHash) {
         this.previousHash = previousHash;
         this.timeStamp = new Date().getTime();
+        this.minor = wallet.publicKey;
         this.hash = calculateHash();
     }
 
     public String calculateHash() {
-        return applySHA256(previousHash + merkleRoot + Long.toString(timeStamp) + Integer.toString(nonce));
+        return applySHA256(previousHash + merkleRoot + minor +Long.toString(timeStamp) + Integer.toString(nonce));
+    }
+
+    /**
+     * 생성 및 수신한 블록의 처리
+     * <p>
+     * 생성된 블록일 경우 채굴하고 블록체인에 추가
+     * <p>
+     * 채굴된 블록을 수신한 경우, 검증하고 블록체인에 추가
+     *
+     * @return 블록체인 추가에 성공했을 시 true
+     */
+    public boolean process() {
+        if (minor.equals(wallet.publicKey)) {
+            synchronized (pool) {
+                while (pool.size() < minimumTransactionsPerBlock) {
+                    try {
+                        pool.wait();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                this.transactions.addAll(pool);
+            }
+            this.mineBlock(difficulty);
+            return addBlock(this);
+        }
+        else {
+            return this.validateBlock() && addBlock(this);
+        }
     }
 
     public void mineBlock(int difficulty) {
@@ -33,8 +67,6 @@ public class Block {
             nonce += 1;
             hash = calculateHash();
         }
-        System.out.println("Nonce: " + Integer.toString(nonce));
-        System.out.println("Hash " + hash);
     }
 
     /**

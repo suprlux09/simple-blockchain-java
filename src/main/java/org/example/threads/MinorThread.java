@@ -1,15 +1,36 @@
 package org.example.threads;
 
+import org.example.entities.Block;
+import org.example.entities.Transaction;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import static org.example.App.*;
+import static org.example.entities.BlockChain.*;
+import static org.example.entities.Mempool.*;
+import static org.example.utilities.WebRequest.*;
+
 public class MinorThread extends Thread {
     @Override
     public void run() {
-        // mempool이 비어 있으면 블록
+        while (true) {
+            Block block = null;
+            synchronized (lockBlockChain) {
+                block = new Block(chain.get(chain.size()-1).hash);
+            }
 
-        // mempool이 비어 있지 않으면 현재 mempool에 있는 트랜잭션 리스트를 가져다가 블록 채굴 시작
-        // 블록을 채굴하면서도 mempool에 트랜잭션이 추가될 수 있어야 함
-        // mempool에서 트랜잭션을 복사하는 과정에서만 락이 필요
-
-        // 채굴 완료되면 블록체인에 추가 후 추가 성공 시 브로드캐스트 전송
-
+            if (block.process()) {
+                System.out.println("Block "+ block.hash +" has been mined successfully");
+                try {
+                    sendBroadcast(BLOCK_ENDPOINT, publicKeyList.keySet().toArray(new String[0]), block);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            else {
+                System.out.println("Block "+ block.hash +" mining FAILED");
+            }
+        }
     }
 }

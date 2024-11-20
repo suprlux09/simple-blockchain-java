@@ -1,10 +1,11 @@
 package org.example.entities;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 public class UTXOs {
-    public static HashMap<String, TransactionOutput> UTXOs = new HashMap<>();
-    public static Object lockUTXOs = new Object();
+    public static final Map<String, TransactionOutput> UTXOsMap = Collections.synchronizedMap(new HashMap<>());
 
     /**
      * 채굴된 블록이나 수신받은 트랜잭션 중 검증된 트랜잭션에 대해
@@ -19,11 +20,11 @@ public class UTXOs {
         transaction.outputs.add(new TransactionOutput(transaction.sender, transaction.getInputsValue() - transaction.value, transaction.transactionId));
 
         for (TransactionInput input : transaction.inputs) {
-            UTXOs.remove(input.UTXO.id);
+            UTXOsMap.remove(input.UTXO.id);
         }
 
         for (TransactionOutput output : transaction.outputs) {
-            UTXOs.put(output.id, output);
+            UTXOsMap.put(output.id, output);
         }
     }
 }

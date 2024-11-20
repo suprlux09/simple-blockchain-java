@@ -1,11 +1,12 @@
 package org.example.entities;
 
+import java.io.Serializable;
 import java.security.PublicKey;
 
 import static org.example.utilities.Hash.applySHA256;
 import static org.example.utilities.DigitalSignature.getStringFromKey;
 
-public class TransactionOutput {
+public class TransactionOutput implements Serializable {
     public String id;
     public PublicKey recipient;
     public float value;
