@@ -21,9 +21,9 @@ public class MinorThread extends Thread {
             }
 
             if (block.process()) {
-                System.out.println("Block "+ block.hash +" has been mined successfully");
                 try {
                     sendBroadcast(BLOCK_ENDPOINT, publicKeyList.keySet().toArray(new String[0]), block);
+                    System.out.println("Block "+ block.hash +" has been mined successfully");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

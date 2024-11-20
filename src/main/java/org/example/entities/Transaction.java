@@ -3,6 +3,7 @@ package org.example.entities;
 import java.io.Serializable;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.example.App.minimumTransaction;
 import static org.example.entities.Mempool.pool;
@@ -28,21 +29,35 @@ public class Transaction implements Serializable {
         this.recipient = to;
         this.value = value;
         this.inputs = inputs;
-        this.transactionId = calculateHash();
+        // genesis transaction인 경우에만 from이 null
+        if (from != null) {
+            this.transactionId = calculateHash();
+        }
     }
 
     @Override
     public boolean equals(Object obj) {
         Transaction t = (Transaction) obj;
+
         if (!this.transactionId.equals(t.transactionId))
-            return false;
-        if (!this.sender.equals(t.sender))
             return false;
         if (!this.recipient.equals(t.recipient))
             return false;
         if (this.value != t.value)
             return false;
-        if (!this.signature.equals(t.signature))
+
+        if (this.sender == null && t.sender != null)
+            return false;
+        if (this.sender != null && t.sender == null)
+            return false;
+        if (this.sender != null && !this.sender.equals(t.sender))
+            return false;
+
+        if (this.signature == null && t.signature != null)
+            return false;
+        if (this.signature != null && t.signature == null)
+            return false;
+        if (this.signature != null && !Arrays.equals(this.signature, t.signature))
             return false;
 
         return true;

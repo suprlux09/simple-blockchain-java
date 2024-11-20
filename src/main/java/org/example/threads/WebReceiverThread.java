@@ -15,17 +15,20 @@ import static org.example.utilities.WebRequest.*;
 import static org.example.utilities.Serialization.*;
 import static org.example.App.wallet;
 
-public class WebReceiverThread {
+public class WebReceiverThread extends Thread{
     private final int port;
-    private HttpServer server;
 
     public WebReceiverThread(int port) throws IOException {
         this.port = port;
-        run();
     }
 
-    public void run() throws IOException {
-        this.server = HttpServer.create(new InetSocketAddress(port), 0);
+    public void run() {
+        HttpServer server;
+        try {
+            server = HttpServer.create(new InetSocketAddress(port), 0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         HttpContext publicKeyContext = server.createContext(PUBLICKEY_ENDPOINT);
         HttpContext blockContext = server.createContext(BLOCK_ENDPOINT);
@@ -48,6 +51,7 @@ public class WebReceiverThread {
 
         try (InputStream in = exchange.getRequestBody()) {
             Transaction transaction = (Transaction) deserializeObjectFromByteArray(in.readAllBytes());
+            System.out.println("Receive transaction " + transaction.transactionId);
             transaction.process();
             exchange.sendResponseHeaders(204, -1);
         } catch (ClassNotFoundException e) {
@@ -65,7 +69,13 @@ public class WebReceiverThread {
 
         try (InputStream in = exchange.getRequestBody()) {
             Block block = (Block) deserializeObjectFromByteArray(in.readAllBytes());
-            block.process();
+            System.out.println("Receive block " + block.hash);
+            if (block.process()) {
+                System.out.println("Add block " + block.hash);
+            }
+            else {
+                System.out.println("Drop block " + block.hash);
+            }
             exchange.sendResponseHeaders(204, -1);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);

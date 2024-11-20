@@ -24,16 +24,16 @@ public class BlockChain {
      */
     public static boolean addBlock(Block block) {
         synchronized (lockBlockChain) {
-            // genesis 블록 추가
+            // 블록 검증
+            if (!block.validateBlock())
+                return false;
+
+            // genesis 블록이면 추가
             if (block.previousHash.equals("0")) {
                 chain.add(block);
                 purgeMempool(block);
                 return true;
             }
-
-            // 블록 검증
-            if (!block.validateBlock())
-                return false;
 
             // 블록체인 분기 발생
             if (chain.size() > 2 && chain.get(chain.size()-2).hash.equals(block.previousHash)) {

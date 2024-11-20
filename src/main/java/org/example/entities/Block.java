@@ -8,6 +8,7 @@ import java.util.Date;
 import static org.example.App.*;
 import static org.example.entities.BlockChain.addBlock;
 import static org.example.entities.Mempool.pool;
+import static org.example.entities.Mempool.purgeMempool;
 import static org.example.utilities.Hash.*;
 
 public class Block implements Serializable {
@@ -75,19 +76,23 @@ public class Block implements Serializable {
      * 해시값, mempool에 모든 트랜잭션이 존재하는지 검증
      * <p>
      * 아직 블록체인에 포함되지 않았으면서, 블록체인에 포함될 수 있는지 여부를 검증
+     * <p>
+     * genesis 블록의 경우, 해시값 검증은 하지 않음
      *
      * @return 유효하면 true, 유효하지 않으면 false
      */
     public boolean validateBlock() {
-        //compare registered hash and calculated hash:
-        if(!this.hash.equals(this.calculateHash()) ){
-            System.out.println("#Current Hashes not equal");
-            return false;
-        }
-        //check if hash is solved
-        if(!this.hash.substring(0, difficulty).equals("0".repeat(difficulty))) {
-            System.out.println("#This block hasn't been mined");
-            return false;
+        if (!this.previousHash.equals("0")) {
+            //compare registered hash and calculated hash:
+            if(!this.hash.equals(this.calculateHash()) ){
+                System.out.println("#Current Hashes not equal");
+                return false;
+            }
+            //check if hash is solved
+            if(!this.hash.substring(0, difficulty).equals("0".repeat(difficulty))) {
+                System.out.println("#This block hasn't been mined");
+                return false;
+            }
         }
 
         for (Transaction transaction : this.transactions) {
