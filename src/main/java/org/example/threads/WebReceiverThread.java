@@ -52,7 +52,6 @@ public class WebReceiverThread extends Thread{
 
         try (InputStream in = exchange.getRequestBody()) {
             Transaction transaction = (Transaction) deserializeObjectFromByteArray(in.readAllBytes());
-            transaction.outputs = new ArrayList<>();
             System.out.println("Receive transaction " + transaction);
             if (transaction.process()) {
                 System.out.println("Transaction is added into mempool");

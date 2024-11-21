@@ -54,11 +54,8 @@ public class Block implements Serializable {
                 this.transactions.addAll(pool);
             }
             this.mineBlock(difficulty);
-            return addBlock(this);
         }
-        else {
-            return this.validateBlock() && addBlock(this);
-        }
+        return addBlock(this);
     }
 
     public void mineBlock(int difficulty) {

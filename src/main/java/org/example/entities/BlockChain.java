@@ -50,13 +50,13 @@ public class BlockChain {
                     return false;
             }
             else {
-                if (!previousBlock.hash.equals(block.hash)) {
+                if (!previousBlock.hash.equals(block.previousHash)) {
                     for (Block b : branchCandidates) {
                         previousBlock = b;
-                        if (previousBlock.hash.equals(block.hash))
+                        if (previousBlock.hash.equals(block.previousHash))
                             break;
                     }
-                    if (!previousBlock.hash.equals(block.hash))
+                    if (!previousBlock.hash.equals(block.previousHash))
                         return false;
 
                     branchCandidates.add(chain.remove(chain.size()-1));
