@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
 import static org.example.utilities.WebRequest.*;
@@ -51,8 +52,14 @@ public class WebReceiverThread extends Thread{
 
         try (InputStream in = exchange.getRequestBody()) {
             Transaction transaction = (Transaction) deserializeObjectFromByteArray(in.readAllBytes());
-            System.out.println("Receive transaction " + transaction.transactionId);
-            transaction.process();
+            transaction.outputs = new ArrayList<>();
+            System.out.println("Receive transaction " + transaction);
+            if (transaction.process()) {
+                System.out.println("Transaction is added into mempool");
+            }
+            else {
+                System.out.println("Drop transaction " + transaction);
+            }
             exchange.sendResponseHeaders(204, -1);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -69,12 +76,12 @@ public class WebReceiverThread extends Thread{
 
         try (InputStream in = exchange.getRequestBody()) {
             Block block = (Block) deserializeObjectFromByteArray(in.readAllBytes());
-            System.out.println("Receive block " + block.hash);
+            System.out.println("Receive block " + block);
             if (block.process()) {
-                System.out.println("Add block " + block.hash);
+                System.out.println("Add block " + block);
             }
             else {
-                System.out.println("Drop block " + block.hash);
+                System.out.println("Drop block " + block);
             }
             exchange.sendResponseHeaders(204, -1);
         } catch (ClassNotFoundException e) {

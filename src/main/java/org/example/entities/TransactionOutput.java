@@ -20,6 +20,6 @@ public class TransactionOutput implements Serializable {
     }
 
     public boolean isMine(PublicKey publicKey) {
-        return (publicKey == recipient);
+        return recipient.equals(publicKey);
     }
 }

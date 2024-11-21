@@ -5,6 +5,7 @@ import java.security.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import static org.example.App.difficulty;
 import static org.example.App.minimumTransaction;
 import static org.example.entities.Mempool.pool;
 import static org.example.entities.UTXOs.*;
@@ -150,5 +151,10 @@ public class Transaction implements Serializable {
             total += output.value;
         }
         return total;
+    }
+
+    @Override
+    public String toString() {
+        return this.transactionId;
     }
 }

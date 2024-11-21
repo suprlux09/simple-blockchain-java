@@ -96,10 +96,17 @@ public class Block implements Serializable {
         }
 
         for (Transaction transaction : this.transactions) {
-            if(!pool.contains(transaction))
+            if(!pool.contains(transaction)) {
+                System.out.println("#The block contains transaction which is not in mempool");
                 return false;
+            }
         }
 
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return this.hash.substring(difficulty, difficulty+6);
     }
 }

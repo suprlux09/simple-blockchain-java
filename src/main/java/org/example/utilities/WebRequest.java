@@ -47,7 +47,7 @@ public class WebRequest {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
                 .exceptionallyCompose(ex -> {
                     try {
-                        System.out.println("Fail to connect, retry after 5 seconds..");
+                        System.out.println("Fail to connect "+ request.uri() +", retry after 5 seconds..");
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
@@ -56,10 +56,10 @@ public class WebRequest {
                 });
     }
 
-    public static <T extends Serializable> void sendBroadcast(String path, String[] socketAddresses, T obj) throws IOException {
+    public static <T extends Serializable> void sendBroadcast(String path, String[] addresses, T obj) throws IOException {
         byte[] data = serializeObjectToByteArray(obj);
-        for (String socketAddress : socketAddresses) {
-            sendPostRequest( socketAddress+path, data);
+        for (String address : addresses) {
+            sendPostRequest( address+path, data);
         }
     }
 }
